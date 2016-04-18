@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{240111C9-A4E4-47BB-9C14-97BD0021D78E}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="UpdateDatabase.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="..\test\UpdateDatabaseTests.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="UpdateDatabase">
+        <MSBuild Projects="UpdateDatabase.dproj"/>
+    </Target>
+    <Target Name="UpdateDatabase:Clean">
+        <MSBuild Projects="UpdateDatabase.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="UpdateDatabase:Make">
+        <MSBuild Projects="UpdateDatabase.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="UpdateDatabaseTests">
+        <MSBuild Projects="..\test\UpdateDatabaseTests.dproj"/>
+    </Target>
+    <Target Name="UpdateDatabaseTests:Clean">
+        <MSBuild Projects="..\test\UpdateDatabaseTests.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="UpdateDatabaseTests:Make">
+        <MSBuild Projects="..\test\UpdateDatabaseTests.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="UpdateDatabase;UpdateDatabaseTests"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="UpdateDatabase:Clean;UpdateDatabaseTests:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="UpdateDatabase:Make;UpdateDatabaseTests:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>

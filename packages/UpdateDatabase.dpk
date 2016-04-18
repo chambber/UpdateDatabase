@@ -39,6 +39,7 @@ contains
   UP.Base in '..\src\UP.Base.pas',
   UP.Client in '..\src\UP.Client.pas',
   UP.Database in '..\src\UP.Database.pas',
-  UP.Table in '..\src\UP.Table.pas';
+  UP.Table in '..\src\UP.Table.pas',
+  UP.Structures in '..\src\UP.Structures.pas';
 
 end.

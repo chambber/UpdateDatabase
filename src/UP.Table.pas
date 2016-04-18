@@ -6,7 +6,7 @@ uses
   //rtl
   System.Classes, System.SysUtils,
   //UP
-  UP.Base;
+  UP.Base, UP.Client;
 
 type
   IUPTable = interface;
@@ -29,6 +29,11 @@ type
   ['{9F7E2BE9-D6DB-4833-BB81-79478E7BF1F3}']
     function Name: string;
     function Fields: IUPFields;
+    function Command: IUPCommand;
+  end;
+
+  IUPTables = interface(IInterface)
+  ['{9B0F9CB9-74AB-4D26-86BE-FF95FC5C05AD}']
     function Get(const TableName: string): IUPTable;
     procedure Delete(const TableName: string);
     function Add(const TableName: string; Command: IUPCommand): IUPTable;
@@ -61,11 +66,22 @@ type
   TUPTable = class sealed(TInterfacedObject, IUPTable)
   private
     FName: string;
+    FCommand: IUPCommand;
   public
-    constructor Create(const Name: string);
-    class function New(const Name: string): IUPTable;
+    constructor Create(const Name: string; Command: IUPCommand);
+    class function New(const Name: string; Command: IUPCommand): IUPTable; overload;
+    class function New(const Name: string): IUPTable; overload;
     function Name: string;
     function Fields: IUPFields;
+    function Command: IUPCommand;
+  end;
+
+  TUPTables = class sealed(TInterfacedObject, IUPTables)
+  private
+    FClient: IUPClient;
+  public
+    constructor Create(Client: IUPClient);
+    class function New(Client: IUPClient): IUPTables;
     function Get(const TableName: string): IUPTable;
     procedure Delete(const TableName: string);
     function Add(const TableName: string; Command: IUPCommand): IUPTable;
@@ -133,40 +149,64 @@ end;
 
 { TUPTable }
 
-function TUPTable.Add(const TableName: string; Command: IUPCommand): IUPTable;
+function TUPTable.Command: IUPCommand;
 begin
-{ TODO -oRubens -cImplementation : Implement Add Table }
+  Result := FCommand;
 end;
 
-constructor TUPTable.Create(const Name: string);
+constructor TUPTable.Create(const Name: string; Command: IUPCommand);
 begin
   inherited Create;
   FName := Name;
-end;
-
-procedure TUPTable.Delete(const TableName: string);
-begin
-
+  FCommand := Command;
 end;
 
 function TUPTable.Fields: IUPFields;
 begin
-
-end;
-
-function TUPTable.Get(const TableName: string): IUPTable;
-begin
-
+  Result := TUPFields.New(Self);
 end;
 
 function TUPTable.Name: string;
 begin
+  Result := FName;
+end;
 
+class function TUPTable.New(const Name: string; Command: IUPCommand): IUPTable;
+begin
+  Result := Create(Name, Command);
 end;
 
 class function TUPTable.New(const Name: string): IUPTable;
 begin
+  Result := Create(Name, nil);
+end;
 
+{ TUPTables }
+
+function TUPTables.Add(const TableName: string; Command: IUPCommand): IUPTable;
+begin
+{ TODO -oRubens -cImplementation : Implement Add Table }
+end;
+
+constructor TUPTables.Create(Client: IUPClient);
+begin
+  inherited Create;
+  FClient := Client;
+end;
+
+procedure TUPTables.Delete(const TableName: string);
+begin
+{ TODO -oRubens -cImplementation : Implement Delete Table }
+end;
+
+function TUPTables.Get(const TableName: string): IUPTable;
+begin
+{ TODO -oRubens -cImplementation : Implement Get Table }
+end;
+
+class function TUPTables.New(Client: IUPClient): IUPTables;
+begin
+  Result := Create(Client);
 end;
 
 end.

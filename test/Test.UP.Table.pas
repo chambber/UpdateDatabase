@@ -37,7 +37,7 @@ type
     function Client: TUPFakeClient;
   end;
 
-  TestIUPFields = class(TTestCase)
+  TestIUPFields = class(TUPTest)
   published
     procedure TestGet;
     procedure TestDelete;
@@ -45,9 +45,16 @@ type
     procedure TestImmutable;
   end;
 
-  TestIUPTable = class(TTestCase)
+  TestIUPTable = class(TUPTest)
   published
-    procedure TestFields;
+    procedure TestImmutableFields;
+  end;
+
+  TestIUPTables = class(TUPTest)
+  published
+    procedure TestGet;
+    procedure TestDelete;
+    procedure TestAdd;
     procedure TestImmutable;
   end;
 
@@ -94,29 +101,120 @@ end;
 
 procedure TestIUPFields.TestAdd;
 var
+  vTables: IUPTables;
   vTable: IUPTable;
+  vCommand: TStrings;
 begin
-  vTable := T
+  vTables := TUPTables.New(FClient);
+  vTable := vTables.Get('TABELA');
+  vCommand := TStringList.Create;
+  vCommand.Text := 'ALTER TABLE TABELA ADD CAMPO INTEGER';
+  try
+    vTable.Fields.Add('CAMPO', TUPCommand.New(vCommand));
+  finally
+    vCommand.Free;
+  end;
+  CheckEquals('OK', Client.Result.MessageExecute);
 end;
 
 procedure TestIUPFields.TestDelete;
+var
+  vTables: IUPTables;
+  vTable: IUPTable;
 begin
-
+  vTables := TUPTables.New(FClient);
+  vTable := vTables.Get('TABELA');
+  vTable.Fields.Delete('CAMPO');
+  CheckEquals('OK', Client.Result.MessageExecute);
 end;
 
 procedure TestIUPFields.TestGet;
+var
+  vTables: IUPTables;
+  vTable: IUPTable;
+  vField: IUPField;
 begin
-
+  vTables := TUPTables.New(FClient);
+  vTable := vTables.Get('TABELA');
+  vField := vTable.Fields.Get('CAMPO');
+  CheckEquals('OK', Client.Result.MessageExecute);
 end;
 
 procedure TestIUPFields.TestImmutable;
+var
+  vTables: IUPTables;
+  vTable: IUPTable;
 begin
+  vTables := TUPTables.New(FClient);
+  vTable := vTables.Get('TABELA');
+  CheckSame(vTable.Fields, vTable.Fields);
+end;
 
+{ TestIUPTable }
+
+procedure TestIUPTable.TestImmutableFields;
+var
+  vTables: IUPTables;
+  vTable: IUPTable;
+begin
+  vTables := TUPTables.New(FClient);
+  vTable := vTables.Get('TABELA');
+  CheckNotNull(vTable.Fields, 'Fields not alive');
+  CheckSame(vTable.Fields, vTable.Fields);
+end;
+
+{ TestIUPTables }
+
+procedure TestIUPTables.TestAdd;
+var
+  vTables: IUPTables;
+  vCommand: TStrings;
+begin
+  vTables := TUPTables.New(FClient);
+  vCommand := TStringList.Create;
+  vCommand.Text := 'CREATE TABLE TABELA(CAMPO INTEGER)';
+  try
+    vTables.Add('TABELA', TUPCommand.New(vCommand));
+  finally
+    vCommand.Free;
+  end;
+  CheckEquals('OK', Client.Result.MessageExecute);
+end;
+
+procedure TestIUPTables.TestDelete;
+var
+  vTables: IUPTables;
+begin
+  vTables := TUPTables.New(FClient);
+  vTables.Delete('TABELA');
+  CheckEquals('OK', Client.Result.MessageExecute);
+end;
+
+procedure TestIUPTables.TestGet;
+var
+  vTables: IUPTables;
+  vTable: IUPTable;
+begin
+  vTables := TUPTables.New(FClient);
+  vTable := vTables.Get('TABELA');
+  CheckEquals('OK', Client.Result.MessageExecute);
+end;
+
+procedure TestIUPTables.TestImmutable;
+var
+  vTables: IUPTables;
+  vTable: IUPTable;
+begin
+  vTables := TUPTables.New(FClient);
+  vTable := vTables.Get('TABELA');
+  CheckSame(vTables, vTable.Fields);
 end;
 
 initialization
   // Register any test cases with the test runner
   RegisterTest(TestIUPFields.Suite);
   RegisterTest(TestIUPTable.Suite);
+  RegisterTest(TestIUPTables.Suite);
+
 end.
 

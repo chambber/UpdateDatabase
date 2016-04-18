@@ -37,7 +37,7 @@ end;
 
 function TUPClient.ExecuteCommand(Command: IUPCommand): IUPResult;
 begin
-{ TODO -oRubens -cImplementation : Implement Execute Command }
+  Result := TUPExecuteCommand.New(Command).Execute;
 end;
 
 class function TUPClient.New(Database: TFDConnection): IUPClient;

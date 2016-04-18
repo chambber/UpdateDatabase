@@ -156,12 +156,17 @@ function TUPExecuteCommand.Execute: IUPResult;
 var
   vMessage: string;
 begin
+  FSender.Connection.StartTransaction;
   try
     FSender.Connection.ExecSQL(FCommand.Text);
+    FSender.Connection.Commit;
     vMessage := 'OK';
   except
     on E: Exception do
+    begin
+      FSender.Connection.Rollback;
       vMessage := E.Message;
+    end;
   end;
   Result := TUPResult.New(vMessage);
 end;
