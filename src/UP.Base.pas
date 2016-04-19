@@ -15,10 +15,10 @@ type
 
   TUPCommand = class sealed(TInterfacedObject, IUPCommand)
   private
-    FCommand: TStrings;
+    FQuery: TStringList;
   public
-    constructor Create(Command: TStrings);
-    class function New(Command: TStrings): IUPCommand; overload;
+    constructor Create(Command: string);
+    class function New(Command: string): IUPCommand; overload;
     class function New: IUPCommand; overload;
     destructor Destroy; override;
     procedure LoadFromStream(Stream: TStream);
@@ -31,11 +31,10 @@ implementation
 
 { TUPCommand }
 
-constructor TUPCommand.Create(Command: TStrings);
+constructor TUPCommand.Create(Command: string);
 begin
   FCommand := TStringList.Create;
-  if Assigned(Command) then
-    FCommand.Text := Command.Text;
+  FCommand.Text := Command;
 end;
 
 destructor TUPCommand.Destroy;
@@ -68,10 +67,10 @@ end;
 
 class function TUPCommand.New: IUPCommand;
 begin
-  Result := Create(nil);
+  Result := Create('');
 end;
 
-class function TUPCommand.New(Command: TStrings): IUPCommand;
+class function TUPCommand.New(Command: string): IUPCommand;
 begin
   Result := Create(Command);
 end;

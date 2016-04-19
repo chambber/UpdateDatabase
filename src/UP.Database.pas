@@ -26,15 +26,16 @@ type
     function Connection: TFDConnection;
   end;
 
-  IUPResult = interface(IInterface)
+  IUPResponse = interface(IInterface)
   ['{A577D58D-7AFF-446F-B13A-76FDA24F2F88}']
     function MessageExecute: string;
     function Cursor: TFDMemTable;
   end;
 
-  IUPExecuteCommand = interface(IInterface)
+  IUPExecute = interface(IInterface)
   ['{7F4134C1-9CC9-4FB5-AE8D-06A9930B0935}']
-    function Execute: IUPResult;
+    function ExecuteCommand: IUPResponse;
+    function ExecuteQuery: IUPResponse;
   end;
 
   TUPCredentials = class sealed(TInterfacedObject, IUPCredentials)
@@ -67,28 +68,29 @@ type
     function Connection: TFDConnection;
   end;
 
-  TUPResult = class sealed(TInterfacedObject, IUPResult)
+  TUPResponse = class sealed(TInterfacedObject, IUPResponse)
   private
     FMessageExecute: string;
     FCursor: TFDMemTable;
   public
     constructor Create(const MessageExecute: string; Cursor: TFDMemTable);
-    class function New(const MessageExecute: string; Cursor: TFDMemTable): IUPResult; overload;
-    class function New(const MessageExecute: string): IUPResult; overload;
+    class function New(const MessageExecute: string; Cursor: TFDMemTable): IUPResponse; overload;
+    class function New(const MessageExecute: string): IUPResponse; overload;
     destructor Destroy; override;
     function MessageExecute: string;
     function Cursor: TFDMemTable;
   end;
 
-  TUPExecuteCommand = class sealed(TInterfacedObject, IUPExecuteCommand)
+  TUPExecute = class sealed(TInterfacedObject, IUPExecute)
   private
     FSender: TUPDatabase;
     FCommand: IUPCommand;
   public
     constructor Create(Command: IUPCommand);
-    class function New(Command: IUPCommand): IUPExecuteCommand;
+    class function New(Command: IUPCommand): IUPExecute;
     destructor Destroy; override;
-    function Execute: IUPResult;
+    function ExecuteCommand: IUPResponse;
+    function ExecuteQuery: IUPResponse;
   end;
 
 var
@@ -98,41 +100,41 @@ implementation
 
 { TUPResult }
 
-constructor TUPResult.Create(const MessageExecute: string; Cursor: TFDMemTable);
+constructor TUPResponse.Create(const MessageExecute: string; Cursor: TFDMemTable);
 begin
   inherited Create;
   FMessageExecute := MessageExecute;
   FCursor := Cursor;
 end;
 
-function TUPResult.Cursor: TFDMemTable;
+function TUPResponse.Cursor: TFDMemTable;
 begin
   Result := FCursor;
 end;
 
-destructor TUPResult.Destroy;
+destructor TUPResponse.Destroy;
 begin
   inherited;
 end;
 
-function TUPResult.MessageExecute: string;
+function TUPResponse.MessageExecute: string;
 begin
   Result := FMessageExecute;
 end;
 
-class function TUPResult.New(const MessageExecute: string): IUPResult;
+class function TUPResponse.New(const MessageExecute: string): IUPResponse;
 begin
   Result := Create(MessageExecute, nil);
 end;
 
-class function TUPResult.New(const MessageExecute: string; Cursor: TFDMemTable): IUPResult;
+class function TUPResponse.New(const MessageExecute: string; Cursor: TFDMemTable): IUPResponse;
 begin
   Result := Create(MessageExecute, Cursor);
 end;
 
 { TUPExecuteCommand }
 
-constructor TUPExecuteCommand.Create(Command: IUPCommand);
+constructor TUPExecute.Create(Command: IUPCommand);
 begin
   inherited Create;
   FCommand := Command;
@@ -146,13 +148,13 @@ begin
   );
 end;
 
-destructor TUPExecuteCommand.Destroy;
+destructor TUPExecute.Destroy;
 begin
   FSender.Free;
   inherited;
 end;
 
-function TUPExecuteCommand.Execute: IUPResult;
+function TUPExecute.ExecuteCommand: IUPResponse;
 var
   vMessage: string;
 begin
@@ -168,10 +170,26 @@ begin
       vMessage := E.Message;
     end;
   end;
-  Result := TUPResult.New(vMessage);
+  Result := TUPResponse.New(vMessage);
 end;
 
-class function TUPExecuteCommand.New(Command: IUPCommand): IUPExecuteCommand;
+function TUPExecute.ExecuteQuery: IUPResponse;
+var
+  vMessage: string;
+begin
+  try
+    FSender.Connection.ExecSQL(FCommand.Text);
+    vMessage := 'OK';
+  except
+    on E: Exception do
+    begin
+      vMessage := E.Message;
+    end;
+  end;
+  Result := TUPResponse.New(vMessage);
+end;
+
+class function TUPExecute.New(Command: IUPCommand): IUPExecute;
 begin
   Result := Create(Command);
 end;

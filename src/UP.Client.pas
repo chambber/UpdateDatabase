@@ -13,7 +13,8 @@ uses
 type
   IUPClient = interface(IInterface)
   ['{CCA81625-D505-46EE-A0C5-90CE07019313}']
-    function ExecuteCommand(Command: IUPCommand): IUPResult;
+    function ExecuteCommand(Command: IUPCommand): IUPResponse;
+    function ExecuteQuery(Command: IUPCommand): IUPResponse;
   end;
 
   TUPClient = class sealed(TInterfacedObject, IUPClient)
@@ -22,7 +23,8 @@ type
   public
     constructor Create(Database: TFDConnection);
     class function New(Database: TFDConnection): IUPClient;
-    function ExecuteCommand(Command: IUPCommand): IUPResult;
+    function ExecuteCommand(Command: IUPCommand): IUPResponse;
+    function ExecuteQuery(Command: IUPCommand): IUPResponse;
   end;
 
 implementation
@@ -35,9 +37,14 @@ begin
   FDatabase := Database;
 end;
 
-function TUPClient.ExecuteCommand(Command: IUPCommand): IUPResult;
+function TUPClient.ExecuteCommand(Command: IUPCommand): IUPResponse;
 begin
-  Result := TUPExecuteCommand.New(Command).Execute;
+  Result := TUPExecute.New(Command).ExecuteCommand;
+end;
+
+function TUPClient.ExecuteQuery(Command: IUPCommand): IUPResponse;
+begin
+  Result := TUPExecute.New(Command).ExecuteQuery;
 end;
 
 class function TUPClient.New(Database: TFDConnection): IUPClient;
