@@ -6,24 +6,20 @@ uses
   System.Classes, System.SysUtils;
 
 type
+  EUPError = class(Exception);
+
   IUPCommand = interface(IInterface)
-    procedure LoadFromStream(Stream: TStream);
-    procedure LoadFromResource(const ResourceName: string);
-    procedure LoadFromFile(const FileName: string);
     function Text: string;
   end;
 
   TUPCommand = class sealed(TInterfacedObject, IUPCommand)
   private
-    FQuery: TStringList;
+    FCommand: TStrings;
   public
-    constructor Create(Command: string);
-    class function New(Command: string): IUPCommand; overload;
-    class function New: IUPCommand; overload;
+    constructor Create(const Command: string); overload;
+    class function New(const Command: string): IUPCommand; overload;
+    class function New(const Update, Resource: Integer): IUPCommand; overload;
     destructor Destroy; override;
-    procedure LoadFromStream(Stream: TStream);
-    procedure LoadFromResource(const ResourceName: string);
-    procedure LoadFromFile(const FileName: string);
     function Text: string;
   end;
 
@@ -31,46 +27,27 @@ implementation
 
 { TUPCommand }
 
-constructor TUPCommand.Create(Command: string);
+constructor TUPCommand.Create(const Command: string);
 begin
   FCommand := TStringList.Create;
   FCommand.Text := Command;
 end;
-
 destructor TUPCommand.Destroy;
 begin
   FCommand.Free;
   inherited;
 end;
 
-procedure TUPCommand.LoadFromFile(const FileName: string);
-begin
-  FCommand.LoadFromFile(FileName);
-end;
-
-procedure TUPCommand.LoadFromResource(const ResourceName: string);
+class function TUPCommand.New(const Update, Resource: Integer): IUPCommand;
 var
-  vResource: TResourceStream;
+  vResource: TStream;
 begin
-  vResource := TResourceStream.Create(HInstance, ResourceName, 'RCDATA');
-  try
-    FCommand.LoadFromStream(vResource);
-  finally
-    vResource.Free;
-  end;
+  vResource := TResourceStream.Create(HInstance, Format('update%d_%d', [Update, Resource]), 'RCDATA');
+  Result := Create(vResource.ToString);
+  vResource.Free;
 end;
 
-procedure TUPCommand.LoadFromStream(Stream: TStream);
-begin
-  FCommand.LoadFromStream(Stream);
-end;
-
-class function TUPCommand.New: IUPCommand;
-begin
-  Result := Create('');
-end;
-
-class function TUPCommand.New(Command: string): IUPCommand;
+class function TUPCommand.New(const Command: string): IUPCommand;
 begin
   Result := Create(Command);
 end;

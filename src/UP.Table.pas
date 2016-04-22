@@ -9,7 +9,8 @@ uses
   UP.Base, UP.Client, UP.Database;
 
 type
-  EUPError = class(Exception);
+  EUPErrorTable = class(EUPError);
+  EUPErrorField = class(EUPError);
 
   IUPTable = interface;
 
@@ -23,7 +24,8 @@ type
   ['{ED7CCB39-293C-4DAC-9564-03D25DA02565}']
     function Get(const FieldName: string): IUPField;
     procedure Delete(const FieldName: string);
-    function Add(const FieldName: string; Command: string): IUPField;
+    function Add(const FieldName, Command: string): IUPField; overload;
+    function Add(const FieldName: string; const Update, Resource: Integer): IUPField; overload;
   end;
 
   IUPTable = interface(IInterface)
@@ -36,7 +38,8 @@ type
   ['{9B0F9CB9-74AB-4D26-86BE-FF95FC5C05AD}']
     function Get(const TableName: string): IUPTable;
     procedure Delete(const TableName: string);
-    function Add(const TableName: string; Command: string): IUPTable;
+    function Add(const TableName, Command: string): IUPTable; overload;
+    function Add(const TableName: string; const Update, Resource: Integer): IUPTable; overload;
   end;
 
   TUPField = class sealed(TInterfacedObject, IUPField)
@@ -54,12 +57,15 @@ type
   private
     FClient: IUPClient;
     FTable: IUPTable;
+
+    function AddField(const FieldName: string; Command: IUPCommand): IUPField;
   public
     constructor Create(Client: IUPClient; Table: IUPTable);
     class function New(Client: IUPClient; Table: IUPTable): IUPFields;
     function Get(const FieldName: string): IUPField;
     procedure Delete(const FieldName: string);
-    function Add(const FieldName: string; Command: string): IUPField;
+    function Add(const FieldName, Command: string): IUPField; overload;
+    function Add(const FieldName: string; const Update, Resource: Integer): IUPField; overload;
   end;
 
   TUPTable = class sealed(TInterfacedObject, IUPTable)
@@ -76,12 +82,15 @@ type
   TUPTables = class sealed(TInterfacedObject, IUPTables)
   private
     FClient: IUPClient;
+
+    function AddTable(const TableName: string; Command: IUPCommand): IUPTable;
   public
     constructor Create(Client: IUPClient);
     class function New(Client: IUPClient): IUPTables;
     function Get(const TableName: string): IUPTable;
     procedure Delete(const TableName: string);
-    function Add(const TableName: string; Command: string): IUPTable;
+    function Add(const TableName, Command: string): IUPTable; overload;
+    function Add(const TableName: string; const Update, Resource: Integer): IUPTable; overload;
   end;
 
 implementation
@@ -112,15 +121,23 @@ end;
 
 { TUPFields }
 
-function TUPFields.Add(const FieldName: string; Command: string): IUPField;
+function TUPFields.Add(const FieldName, Command: string): IUPField;
+begin
+  Result := AddField(FieldName, TUPCommand.New(Command));
+end;
+
+function TUPFields.Add(const FieldName: string; const Update, Resource: Integer): IUPField;
+begin
+  Result := AddField(FieldName, TUPCommand.New(Update, Resource));
+end;
+
+function TUPFields.AddField(const FieldName: string; Command: IUPCommand): IUPField;
 var
   vResponse: IUPResponse;
 begin
-  vResponse := FClient.ExecuteCommand(
-    TUPCommand.New(Command)
-  );
+  vResponse := FClient.ExecuteCommand(Command);
   if vResponse.MessageExecute <> 'OK' then
-    raise EUPError.CreateFmt('Add Error: %s', [vResponse.MessageExecute]);
+    raise EUPErrorField.CreateFmt('Add Error: %s', [vResponse.MessageExecute]);
 end;
 
 constructor TUPFields.Create(Client: IUPClient; Table: IUPTable);
@@ -142,7 +159,7 @@ begin
      )
   );
   if vResponse.MessageExecute <> 'OK' then
-    raise EUPError.CreateFmt('Delete Error: %s', [vResponse.MessageExecute]);
+    raise EUPErrorField.CreateFmt('Delete Error: %s', [vResponse.MessageExecute]);
 end;
 
 function TUPFields.Get(const FieldName: string): IUPField;
@@ -157,7 +174,7 @@ begin
     )
   );
   if vResponse.Cursor.IsEmpty then
-    raise EUPError.CreateFmt('Get Error: Field "%s" not found in table "%s"', [FieldName, FTable.Name]);
+    raise EUPErrorField.CreateFmt('Get Error: Field "%s" not found in table "%s"', [FieldName, FTable.Name]);
   Result := TUPField.Create(FTable, FieldName);
 end;
 
@@ -192,15 +209,23 @@ end;
 
 { TUPTables }
 
-function TUPTables.Add(const TableName: string; Command: string): IUPTable;
+function TUPTables.Add(const TableName, Command: string): IUPTable;
+begin
+  Result := AddTable(TableName, TUPCommand.New(Command));
+end;
+
+function TUPTables.Add(const TableName: string; const Update, Resource: Integer): IUPTable;
+begin
+  Result := AddTable(TableName, TUPCommand.New(Update, Resource));
+end;
+
+function TUPTables.AddTable(const TableName: string; Command: IUPCommand): IUPTable;
 var
   vResponse: IUPResponse;
 begin
-  vResponse := FClient.ExecuteCommand(
-    TUPCommand.New(Command)
-  );
+  vResponse := FClient.ExecuteCommand(Command);
   if vResponse.MessageExecute <> 'OK' then
-    raise EUPError.CreateFmt('Add Error: %s', [vResponse.MessageExecute]);
+    raise EUPErrorTable.CreateFmt('Add Error: %s', [vResponse.MessageExecute]);
 end;
 
 constructor TUPTables.Create(Client: IUPClient);
@@ -221,7 +246,7 @@ begin
      )
   );
   if vResponse.MessageExecute <> 'OK' then
-    raise EUPError.CreateFmt('Delete Error: %s', [vResponse.MessageExecute]);
+    raise EUPErrorTable.CreateFmt('Delete Error: %s', [vResponse.MessageExecute]);
 end;
 
 function TUPTables.Get(const TableName: string): IUPTable;
@@ -236,7 +261,7 @@ begin
     )
   );
   if vResponse.Cursor.IsEmpty then
-    raise EUPError.Create('Get Error: table not found');
+    raise EUPErrorTable.Create('Get Error: table not found');
   Result := TUPTable.Create(FClient, TableName);
 end;
 
